@@ -1,0 +1,16 @@
+#!/bin/bash
+for f in tests/*.cl
+do
+    if [[ $# = 0 ]]  
+    then 
+        echo "number of lines of diff for: $f"
+        diff -U 0 <(./mysemant $f) <(./theirsemant $f) | grep ^@ | wc -l
+    elif [[ $# = 2 ]]
+    then 
+        echo "mysemant output for: $f"
+        ./mysemant $f
+    else
+        echo "diffing lexer output for: $f"
+        diff <(./mysemant $f) <(./theirsemant $f)
+    fi
+done
