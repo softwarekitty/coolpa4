@@ -84,111 +84,71 @@ static void initialize_constants(void)
 
 
 ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr){
+    //first install the built-ins (this is an abbreviated version 
+    //of install_base_classes from the SKEL file)
     class_table = new std::map<Symbol, Class_>;
+    Symbol basic_class_filename = stringtable.add_string("<basic class>");
+    install_class(
+        Object, 
+        class_(Object, No_class,
+            join3_Features(
+                method(cool_abort, nil_Formals(), Object, no_expr()),
+                method(type_name, nil_Formals(), Str, no_expr()),
+                method(copy, nil_Formals(), SELF_TYPE, no_expr())),basic_class_filename)
+	);
+	install_class(
+        Bool, 
+        class_(Bool, Object, single_Features(attr(val, prim_slot, no_expr())),basic_class_filename)
+    );
+    install_class(
+        Int, 
+        class_(Int, Object,single_Features(attr(val, prim_slot, no_expr())),basic_class_filename)
+    );
+    install_class(
+        IO, 
+        class_(IO, Object,
+            join4_Features(
+                method(out_string, single_Formals(formal(arg, Str)),SELF_TYPE, no_expr()),
+                method(out_int, single_Formals(formal(arg, Int)),SELF_TYPE, no_expr()),
+                method(in_string, nil_Formals(), Str, no_expr()),
+                method(in_int, nil_Formals(), Int, no_expr())),basic_class_filename)
+    );
+    install_class(
+        Str, 
+        class_(Str, No_class,
+            join5_Features(
+                attr(val, Int, no_expr()),
+                attr(str_field, prim_slot, no_expr()),
+                method(length, nil_Formals(), Int, no_expr()),
+                method(concat,single_Formals(formal(arg, Str)),Str, no_expr()),
+                method(substr,append_Formals(single_Formals(formal(arg, Int)), single_Formals(formal(arg2, Int))),Str,no_expr())
+            ),basic_class_filename)
+    );
+    
+    //now install all the classes given as arguments
+    for(int i = classes->first(); classes->more(i); i = classes->next(i)) {
+        install_class(classes->nth(i)->get_name(), classes->nth(i));
+    }
 }
 
-void ClassTable::install_basic_classes() {
+void ClassTable::install_class(Symbol id, Class_ cls){
+    std::ostringstream oss;
+    if (class_table->find(id) != class_table->end()) {
+        semant_error(cls);
+        oss << "Class " << id << " already exists" << endl;
+        throw oss.str();
+    }else if (id == SELF_TYPE) {
+        semant_error(cls);
+        oss << "Class cannot have name SELF_TYPE" << endl;
+        throw oss.str();
+    }
+    class_table->insert(std::pair<Symbol, Class_>(id, cls));
+}
 
-    // The tree package uses these globals to annotate the classes built below.
-   // curr_lineno  = 0;
-    Symbol filename = stringtable.add_string("<basic class>");
-    
-    // The following demonstrates how to create dummy parse trees to
-    // refer to basic Cool classes.  There's no need for method
-    // bodies -- these are already built into the runtime system.
-    
-    // IMPORTANT: The results of the following expressions are
-    // stored in local variables.  You will want to do something
-    // with those variables at the end of this method to make this
-    // code meaningful.
-
-    // 
-    // The Object class has no parent class. Its methods are
-    //        abort() : Object    aborts the program
-    //        type_name() : Str   returns a string representation of class name
-    //        copy() : SELF_TYPE  returns a copy of the object
-    //
-    // There is no need for method bodies in the basic classes---these
-    // are already built in to the runtime system.
-
-    Class_ Object_class =
-	class_(Object, 
-	       No_class,
-	       append_Features(
-			       append_Features(
-					       single_Features(method(cool_abort, nil_Formals(), Object, no_expr())),
-					       single_Features(method(type_name, nil_Formals(), Str, no_expr()))
-				    ),
-			       single_Features(method(copy, nil_Formals(), SELF_TYPE, no_expr()))
-		   ),
-	       filename);
-
-    // 
-    // The IO class inherits from Object. Its methods are
-    //        out_string(Str) : SELF_TYPE       writes a string to the output
-    //        out_int(Int) : SELF_TYPE            "    an int    "  "     "
-    //        in_string() : Str                 reads a string from the input
-    //        in_int() : Int                      "   an int     "  "     "
-    //
-    Class_ IO_class = 
-	class_(IO, 
-	       Object,
-	       append_Features(
-			       append_Features(
-					       append_Features(
-							       single_Features(method(out_string, single_Formals(formal(arg, Str)),SELF_TYPE, no_expr())),
-							       single_Features(method(out_int, single_Formals(formal(arg, Int)),SELF_TYPE, no_expr()))
-							),
-					       single_Features(method(in_string, nil_Formals(), Str, no_expr()))
-					),
-			       single_Features(method(in_int, nil_Formals(), Int, no_expr()))
-			),
-	       filename);  
-
-    //
-    // The Int class has no methods and only a single attribute, the
-    // "val" for the integer. 
-    //
-    Class_ Int_class =
-	class_(Int, 
-	       Object,
-	       single_Features(attr(val, prim_slot, no_expr())),
-	       filename);
-
-    //
-    // Bool also has only the "val" slot.
-    //
-    Class_ Bool_class =
-	class_(Bool, Object, single_Features(attr(val, prim_slot, no_expr())),filename);
-
-    //
-    // The class Str has a number of slots and operations:
-    //       val                                  the length of the string
-    //       str_field                            the string itself
-    //       length() : Int                       returns length of the string
-    //       concat(arg: Str) : Str               performs string concatenation
-    //       substr(arg: Int, arg2: Int): Str     substring selection
-    //       
-    Class_ Str_class =
-	class_(Str, 
-	       Object,
-	       append_Features(
-			       append_Features(
-					       append_Features(
-							       append_Features(
-									       single_Features(attr(val, Int, no_expr())),
-									       single_Features(attr(str_field, prim_slot, no_expr()))),
-							       single_Features(method(length, nil_Formals(), Int, no_expr()))),
-					       single_Features(method(concat, 
-								      single_Formals(formal(arg, Str)),
-								      Str, 
-								      no_expr()))),
-			       single_Features(method(substr, 
-						      append_Formals(single_Formals(formal(arg, Int)), 
-								     single_Formals(formal(arg2, Int))),
-						      Str, 
-						      no_expr()))),
-	       filename);
+void ClassTable::initialize_class_contents(){
+    for (std::map<Symbol, Class_>::iterator it = class_table->begin(); it != class_table->end(); it++) {
+        it->second->initialize_contents();
+    }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -222,8 +182,25 @@ ostream& ClassTable::semant_error()
     semant_errors++;                            
     return error_stream;
 } 
-void method_class::semant(){}
-void attr_class::semant(){}
+
+//////////////////////////////////////initializers////////////////////////////////////
+void class__class::initialize_contents(){
+    if(semant_debug){cout<<"initializing class contents" << endl;}
+    for(int i = features->first(); features->more(i); i = features->next(i)) {
+        features->nth(i)->initialize();
+    }
+}
+
+void method_class::initialize(){
+    if(semant_debug){cout<<"initializing method contents" << endl;}
+}
+
+void attr_class::initialize(){
+    if(semant_debug){cout<<"initializing attr contents" << endl;}
+}
+
+
+///////////////////////////////////////semants////////////////////////////////////////
 void formal_class::semant(){}
 
 void static_dispatch_class::semant(){}
@@ -254,10 +231,14 @@ void dispatch_class::semant(){}
 
 void class__class::semant()
 {
+    cout<<"class"<<endl;
   for(int i = features->first(); features->more(i); i = features->next(i)) {
     features->nth(i)->semant();
   }
 }
+
+void method_class::semant(){cout<<"method"<<endl;}
+void attr_class::semant(){cout<<"attr"<<endl;}
 
 /*   This is the entry point to the semantic checker.
 
@@ -278,16 +259,24 @@ void program_class::semant()
 
     /* ClassTable constructor may do some semantic analysis */
     ClassTable *classtable = new ClassTable(classes);
-
-    /* some semantic analysis code may go here */
-    for(int i = classes->first(); classes->more(i); i = classes->next(i)) {
-        Class_ current_class = classes->nth(i);
-        try{
-            current_class->semant();
-        }catch(std::string error_msg){
-            classtable->semant_error(current_class);
-            cerr << error_msg << endl;
+    try{
+        classtable->initialize_class_contents();
+        
+    
+        
+        /* recursively call semant on nodes in the tree, recovering to catch more errors */
+        for(int i = classes->first(); classes->more(i); i = classes->next(i)) {
+            Class_ current_class = classes->nth(i);
+            try{
+                current_class->semant();
+            }catch(std::string error_msg){
+                classtable->semant_error(current_class);
+                cerr << error_msg << endl;
+            }
         }
+    }catch(std::string error_msg){
+        classtable->semant_error();
+        cerr << error_msg << endl;
     }
 
     if (classtable->errors()) {

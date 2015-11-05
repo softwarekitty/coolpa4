@@ -34,8 +34,20 @@ public:
   ostream& semant_error();
   ostream& semant_error(Class_ c);
   ostream& semant_error(Symbol filename, tree_node *t);
+  void install_class(Symbol id, Class_ cls);
+  void initialize_class_contents();
 };
 
+// reducing clutter
+Features join3_Features(Feature f1, Feature f2, Feature f3){
+    return append_Features(append_Features(single_Features(f1),single_Features(f2)),single_Features(f3));
+}
+Features join4_Features(Feature f1, Feature f2, Feature f3, Feature f4){
+    return append_Features(join3_Features(f1,f2,f3),single_Features(f4));
+}
+Features join5_Features(Feature f1, Feature f2, Feature f3, Feature f4, Feature f5){
+    return append_Features(join4_Features(f1,f2,f3,f4),single_Features(f5));
+}
 
 #endif
 

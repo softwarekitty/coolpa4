@@ -8,7 +8,7 @@ do
     elif [[ $# = 2 ]]
     then 
         echo "mysemant output for: $f"
-        ./mysemant $f
+        ./mysemant -s $f
     else
         echo "diffing lexer output for: $f"
         diff <(./mysemant $f) <(./theirsemant $f)

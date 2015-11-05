@@ -12,6 +12,8 @@
 #include "tree.h"
 #include "cool-tree.handcode.h"
 #include <sstream>
+#include <map>
+#include "symtab.h"
 
 
 // define the class for phylum
@@ -37,6 +39,8 @@ public:
    tree_node *copy()		 { return copy_Class_(); }
    virtual Class_ copy_Class_() = 0;
    virtual void semant()=0;
+   virtual void initialize_contents()=0;
+   virtual Symbol get_name()=0;
 #ifdef Class__EXTRAS
    Class__EXTRAS
 #endif
@@ -51,6 +55,7 @@ public:
    tree_node *copy()		 { return copy_Feature(); }
    virtual Feature copy_Feature() = 0;
    virtual void semant()=0;
+   virtual void initialize()=0;
 
 #ifdef Feature_EXTRAS
    Feature_EXTRAS
@@ -158,15 +163,23 @@ protected:
    Features features;
    Symbol filename;
 public:
+   SymbolTable<Symbol, Symbol> *otable;		
+   std::map<Symbol, Feature> *mtable;
    class__class(Symbol a1, Symbol a2, Features a3, Symbol a4) {
       name = a1;
       parent = a2;
       features = a3;
       filename = a4;
+      otable = new SymbolTable<Symbol, Symbol>();		
+      otable->enterscope();		
+      mtable = new std::map<Symbol, Feature>();
    }
    Class_ copy_Class_();
    void dump(ostream& stream, int n);
    void semant();
+   void initialize_contents();
+   Symbol get_name(){ return name;}
+
 
 #ifdef Class__SHARED_EXTRAS
    Class__SHARED_EXTRAS
@@ -193,7 +206,8 @@ public:
    }
    Feature copy_Feature();
    void dump(ostream& stream, int n);
-    void semant();
+   void semant();
+   void initialize();
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
@@ -219,6 +233,7 @@ public:
    Feature copy_Feature();
    void dump(ostream& stream, int n);
    void semant();
+   void initialize();
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
@@ -865,6 +880,8 @@ Expression new_(Symbol);
 Expression isvoid(Expression);
 Expression no_expr();
 Expression object(Symbol);
+
+
 
 
 #endif
