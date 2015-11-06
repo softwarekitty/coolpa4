@@ -36,9 +36,14 @@ public:
   ostream& semant_error(Symbol filename, tree_node *t);
   void install_class(Symbol id, Class_ cls);
   void initialize_class_contents();
+  void initialize_inheritance_tree();
+  void validate_classes();
+  void validate_features();
+  bool isMismatchedOverride(Feature cmethod, Feature pmethod);
+  bool identicalFormals(Formals f1, Formals f2);
 };
 
-// reducing clutter
+// reducing clutter in semant.cc
 Features join3_Features(Feature f1, Feature f2, Feature f3){
     return append_Features(append_Features(single_Features(f1),single_Features(f2)),single_Features(f3));
 }

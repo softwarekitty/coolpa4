@@ -13,6 +13,7 @@
 #include "cool-tree.handcode.h"
 #include <sstream>
 #include <map>
+#include <list>
 #include "symtab.h"
 
 
@@ -41,6 +42,14 @@ public:
    virtual void semant()=0;
    virtual void initialize_contents()=0;
    virtual Symbol get_name()=0;
+   virtual SymbolTable<Symbol, Symbol> *otable()=0;
+   virtual std::map<Symbol, Feature> *mtable()=0;
+   virtual Symbol get_parent()=0;
+   virtual void add_child(Class_ class_)=0;
+   virtual bool isVisited()=0;	
+   virtual void visit()=0;
+   virtual void validate_inheritanceR()=0;
+   virtual Features getFeatures()=0;
 #ifdef Class__EXTRAS
    Class__EXTRAS
 #endif
@@ -55,7 +64,11 @@ public:
    tree_node *copy()		 { return copy_Feature(); }
    virtual Feature copy_Feature() = 0;
    virtual void semant()=0;
-   virtual void initialize()=0;
+   virtual void initialize(Class_ c)=0;
+   virtual Symbol get_name()=0;
+   virtual bool isMethod()=0;
+   virtual Symbol get_type()=0;
+   virtual Formals get_formals()=0;
 
 #ifdef Feature_EXTRAS
    Feature_EXTRAS
@@ -71,6 +84,8 @@ public:
    tree_node *copy()		 { return copy_Formal(); }
    virtual Formal copy_Formal() = 0;
    virtual void semant()=0;
+   virtual Symbol get_name() = 0;		
+   virtual Symbol get_type() = 0;
 
 #ifdef Formal_EXTRAS
    Formal_EXTRAS
@@ -154,7 +169,6 @@ public:
 #endif
 };
 
-
 // define constructor - class_
 class class__class : public Class__class {
 protected:
@@ -162,23 +176,36 @@ protected:
    Symbol parent;
    Features features;
    Symbol filename;
+   SymbolTable<Symbol, Symbol> *object_table;		
+   std::map<Symbol, Feature> *method_table;
+   std::list<Class_> *child_list;
+   bool visited;
 public:
-   SymbolTable<Symbol, Symbol> *otable;		
-   std::map<Symbol, Feature> *mtable;
+
+   SymbolTable<Symbol, Symbol> *otable(){return object_table;}
+   std::map<Symbol, Feature> *mtable(){return method_table;}
    class__class(Symbol a1, Symbol a2, Features a3, Symbol a4) {
       name = a1;
       parent = a2;
       features = a3;
       filename = a4;
-      otable = new SymbolTable<Symbol, Symbol>();		
-      otable->enterscope();		
-      mtable = new std::map<Symbol, Feature>();
+      object_table = new SymbolTable<Symbol, Symbol>();		
+      object_table->enterscope();		
+      method_table = new std::map<Symbol, Feature>();
+      child_list = new std::list<Class_>();
+      visited=false;
    }
    Class_ copy_Class_();
    void dump(ostream& stream, int n);
    void semant();
    void initialize_contents();
    Symbol get_name(){ return name;}
+   Symbol get_parent(){ return parent;}
+   void add_child(Class_ cls){child_list->push_front(cls);}
+   bool isVisited(){ return visited;}
+   void visit(){visited = true;}
+   void validate_inheritanceR();
+   Features getFeatures(){return features;}
 
 
 #ifdef Class__SHARED_EXTRAS
@@ -207,7 +234,11 @@ public:
    Feature copy_Feature();
    void dump(ostream& stream, int n);
    void semant();
-   void initialize();
+   void initialize(Class_ c);
+   Symbol get_name(){return name;}	
+   bool isMethod(){return true;}	
+   Symbol get_type(){return return_type;}
+   Formals get_formals(){ return formals;}
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
@@ -233,7 +264,11 @@ public:
    Feature copy_Feature();
    void dump(ostream& stream, int n);
    void semant();
-   void initialize();
+   void initialize(Class_ c);
+   bool isMethod(){return false;}
+   Symbol get_name(){return name;}
+    Symbol get_type(){return type_decl;}
+    Formals get_formals(){ return NULL;}
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
@@ -257,6 +292,8 @@ public:
    Formal copy_Formal();
    void dump(ostream& stream, int n);
    void semant();
+   Symbol get_name(){return name;}		
+   Symbol get_type(){return type_decl;}
 
 #ifdef Formal_SHARED_EXTRAS
    Formal_SHARED_EXTRAS

@@ -9,6 +9,10 @@ do
     then 
         echo "mysemant output for: $f"
         ./mysemant -s $f
+    elif [[ $# = 3 ]]
+    then 
+        echo "mysemant output for: $f"
+        ./theirsemant -s $f
     else
         echo "diffing lexer output for: $f"
         diff <(./mysemant $f) <(./theirsemant $f)
