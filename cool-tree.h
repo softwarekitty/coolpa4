@@ -50,6 +50,8 @@ public:
    virtual void visit()=0;
    virtual void validate_inheritanceR()=0;
    virtual Features getFeatures()=0;
+   virtual Symbol get_attr(Symbol s1)=0;
+   virtual Feature get_method(Symbol method)=0;
 #ifdef Class__EXTRAS
    Class__EXTRAS
 #endif
@@ -206,6 +208,8 @@ public:
    void visit(){visited = true;}
    void validate_inheritanceR();
    Features getFeatures(){return features;}
+   Symbol get_attr(Symbol s1);
+   Feature get_method(Symbol method);
 
 
 #ifdef Class__SHARED_EXTRAS

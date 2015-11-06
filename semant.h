@@ -41,6 +41,10 @@ public:
   void validate_features();
   bool isMismatchedOverride(Feature cmethod, Feature pmethod);
   bool identicalFormals(Formals f1, Formals f2);
+  bool inherits(Symbol s1, Symbol s2);
+  bool classExists(Symbol s1);
+  Class_ getClass(Symbol s1);
+  void addToCurrentScope(Symbol name, Symbol type);
 };
 
 // reducing clutter in semant.cc
